@@ -3,29 +3,30 @@ include 'db.php'; // Include the database connection
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
-    $username = $_POST['username'];
-    $password = $_POST['password']; // No hashing
+    $name = $_POST['name']; // Changed to 'name' to match the table column
+    $password = $_POST['password'];
 
     // Validate form fields
-    if (empty($email) || empty($username) || empty($password)) {
+    if (empty($email) || empty($name) || empty($password)) {
         $error = "All fields are required!";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Invalid email format!";
     } else {
         // Check if the email or username already exists
-        $checkUserQuery = "SELECT * FROM users WHERE email = ? OR username = ?";
+        $checkUserQuery = "SELECT * FROM usersmain WHERE email = ? OR name = ?";
         $stmtCheck = $conn->prepare($checkUserQuery);
-        $stmtCheck->bind_param("ss", $email, $username);
+        $stmtCheck->bind_param("ss", $email, $name);
         $stmtCheck->execute();
         $result = $stmtCheck->get_result();
 
         if ($result->num_rows > 0) {
             $error = "User with this email or username already exists!";
         } else {
-            // Insert the user into the users table with plain text password
-            $sql = "INSERT INTO users (email, username, password) VALUES (?, ?, ?)";
+            // Hash the password before inserting into the database
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+            $sql = "INSERT INTO usersmain (email, name, password) VALUES (?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sss", $email, $username, $password); // No hashing
+            $stmt->bind_param("sss", $email, $name, $hashedPassword); // Use hashed password
 
             if ($stmt->execute()) {
                 $success = "User registered successfully!";
@@ -86,8 +87,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="email" name="email" id="email" class="form-control" required>
                 </div>
                 <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" name="username" id="username" class="form-control" required>
+                    <label for="name" class="form-label">Username</label>
+                    <input type="text" name="name" id="name" class="form-control" required>
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">Password</label>
