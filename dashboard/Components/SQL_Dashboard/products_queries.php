@@ -1,29 +1,37 @@
 <?php
-// Fetch total number of products
-function getTotalStock($conn) {
-    $totalProductsQuery = "SELECT SUM(stock) as totalStock FROM products";
-    $totalProductsResult = $conn->query($totalProductsQuery);
-    return $totalProductsResult->fetch_assoc();
-}
+// ProductQueries.php
+require_once __DIR__ . '/../dbclass.php';
 
-// Fetch the number of distinct categories
-function getTotalCategories($conn) {
-    $totalCategoriesQuery = "SELECT COUNT(DISTINCT category) as totalCategories FROM products";
-    $totalCategoriesResult = $conn->query($totalCategoriesQuery);
-    return $totalCategoriesResult->fetch_assoc();
-}
+class ProductQueries extends DBclass {
 
-// Fetch total stock per category
-function getStockByCategory($conn) {
-    $stockByCategoryQuery = "SELECT category, SUM(stock) AS totalStock FROM products GROUP BY category";
-    $stockByCategoryResult = $conn->query($stockByCategoryQuery);
-    return $stockByCategoryResult;
-}
+    public function getTotalStock() {
+        $query = "SELECT SUM(stock) as totalStock FROM products";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
 
-// Fetch low stock products
-function getLowStockProducts($conn) {
-    $lowStockQuery = "SELECT name, stock FROM Products WHERE stock < 10";
-    $lowStockResult = $conn->query($lowStockQuery);
-    return $lowStockResult;
+    public function getTotalCategories() {
+        $query = "SELECT COUNT(DISTINCT category) as totalCategories FROM products";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function getStockByCategory() {
+        $query = "SELECT category, SUM(stock) AS totalStock FROM products GROUP BY category";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
+
+    public function getLowStockProducts() {
+        $query = "SELECT name, stock FROM Products WHERE stock < 10";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
 }
 ?>

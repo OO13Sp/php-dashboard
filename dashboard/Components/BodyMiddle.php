@@ -1,42 +1,44 @@
- 
 <?php
 // Database connection
-include 'db.php';
+require_once __DIR__ . '/./dbclass.php'; // Ensure your database connection file is included
 
- 
-// Include SQL query files from the SQL folder
-// Use absolute paths because it wasnt working without the DIR
-include __DIR__ . '/SQL_Dashboard/sales_queries.php';
-include __DIR__ . '/SQL_Dashboard/products_queries.php';
-include __DIR__ . '/SQL_Dashboard/users_queries.php';
-include __DIR__ . '/SQL_Dashboard/orders_queries.php';
+// Include your class files for queries
+require_once __DIR__ . '/SQL_Dashboard/orders_queries.php';
+require_once __DIR__ . '/SQL_Dashboard/products_queries.php';
+require_once __DIR__ . '/SQL_Dashboard/sales_queries.php';
+require_once __DIR__ . '/SQL_Dashboard/users_queries.php';
 
-
+// Create instances of your query classes (no need to pass $conn)
+$sales = new SalesQueries();
+$products = new ProductQueries();
+$users = new UserQueries();
+$orders = new OrderQueries();
 
 // Fetch sales data
-$salesData = getSalesData($conn);
+$salesData = $sales->getSalesData();
 $totalSales = $salesData['total_sales'];
 $salesTarget = $salesData['sales_target'];
 $grossIncome = $salesData['gross_income'];
-$salesPercentage = ($totalSales / $salesTarget) * 100;
+$salesPercentage = ($salesTarget > 0) ? ($totalSales / $salesTarget) * 100 : 0;
 
 // Fetch total stock and categories
-$totalStock = getTotalStock($conn)['totalStock'];
-$totalCategories = getTotalCategories($conn)['totalCategories'];
-$stockByCategoryResult = getStockByCategory($conn);
+$totalStock = $products->getTotalStock()['totalStock'];
+$totalCategories = $products->getTotalCategories()['totalCategories'];
+$stockByCategoryResult = $products->getStockByCategory();
 
 // Fetch user data
-$totalUsers = getTotalUsers($conn)['total_users'];
-$newUsers = getNewUsers($conn)['new_users'];
+$totalUsers = $users->getTotalUsers()['total_users'];
+$newUsers = $users->getNewUsers()['new_users'];
 
 // Fetch order data
-$totalOrders = getTotalOrders($conn)['total_orders'];
-$recentOrders = getRecentOrders($conn)['recent_orders'];
-$topSellingProductsResult = getTopSellingProducts($conn);
+$totalOrders = $orders->getTotalOrders()['total_orders'];
+$recentOrders = $orders->getRecentOrders()['recent_orders'];
+// Fetch the top-selling products from the OrderQueries instance
+$topSellingProductsResult = $orders->getTopSellingProducts();
+
 
 // Fetch monthly sales data
-$salesByMonthResult = getSalesByMonth($conn);
-
+$salesByMonthResult = $sales->getSalesByMonth();
 ?>
 
 <!DOCTYPE html>
@@ -55,7 +57,7 @@ $salesByMonthResult = getSalesByMonth($conn);
             height: 300px;
             position: relative;
             margin: 0 auto;
-            borderRadius: 10;
+            border-radius: 10px;
         }
 
         .progress-value {
@@ -65,13 +67,12 @@ $salesByMonthResult = getSalesByMonth($conn);
             transform: translate(-50%, -50%);
             font-size: 24px;
             font-weight: bold;
-            borderRadius: 10;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
     <section class="container">
-        <!-- First row: one large box on the left, two stacked boxes on the right -->
         <div class="row">
             <!-- Large box on the left with circular progress bar -->
             <div class="col-md-6">
@@ -91,9 +92,8 @@ $salesByMonthResult = getSalesByMonth($conn);
             <!-- Two small boxes on the right -->
             <div class="col-md-6">
                 <div class="row">
-                    <!-- First box on the right displaying total stock -->
                     <div class="col-12 mb-3">
-                        <div class="card   text-white" style="height: 100%; background-color: #565656;">
+                        <div class="card text-white" style="height: 100%; background-color: #565656;">
                             <div class="card-body">
                                 <h5 class="card-title">Total Stock</h5>
                                 <p class="card-text">Total Stock: <?php echo $totalStock; ?></p>
@@ -101,17 +101,16 @@ $salesByMonthResult = getSalesByMonth($conn);
                         </div>
                     </div>
                     <div class="col-12 mb-3">
-                        <div class="card   text-white" style="height: 100%; background-color: #565656;">
+                        <div class="card text-white" style="height: 100%; background-color: #565656;">
                             <div class="card-body">
-                                <h5 class="card-title"> Devliery Status</h5>
-                                <p class="card-text"> Orders On Delivery: <?php echo $totalOrders; ?></p>
-                                <p class="card-text"> Pending Delivery: 0</p>
+                                <h5 class="card-title">Delivery Status</h5>
+                                <p class="card-text">Orders On Delivery: <?php echo $totalOrders; ?></p>
+                                <p class="card-text">Pending Delivery: 0</p>
                             </div>
                         </div>
                     </div>
-                    <!-- Second box on the right displaying stock per category -->
                     <div class="col-12">
-                        <div class="card   text-white" style="height: 100%; background-color: #565656;">
+                        <div class="card text-white" style="height: 100%; background-color: #565656;">
                             <div class="card-body">
                                 <h5 class="card-title">Stock by Category</h5>
                                 <p class="card-text">Total Categories: <?php echo $totalCategories; ?></p>
@@ -126,16 +125,13 @@ $salesByMonthResult = getSalesByMonth($conn);
                             </div>
                         </div>
                     </div>
-                    
                 </div>
             </div>
         </div>
 
-        <!-- Second row: User stats, order stats, and top-selling products -->
         <div class="row mt-3">
-            <!-- Total Users and New Users -->
             <div class="col-md-4">
-                <div class="card   text-white" style="height: 100%; background-color: #565656;">
+                <div class="card text-white" style="height: 100%; background-color: #565656;">
                     <div class="card-body">
                         <h5 class="card-title">User Statistics</h5>
                         <p class="card-text">Total Users: <?php echo $totalUsers; ?></p>
@@ -143,9 +139,8 @@ $salesByMonthResult = getSalesByMonth($conn);
                     </div>
                 </div>
             </div>
-            <!-- Total and Recent Orders -->
             <div class="col-md-4">
-                <div class="card   text-white" style="height: 100%; background-color: #565656;">
+                <div class="card text-white" style="height: 100%; background-color: #565656;">
                     <div class="card-body">
                         <h5 class="card-title">Order Overview</h5>
                         <p class="card-text">Total Orders: <?php echo $totalOrders; ?></p>
@@ -153,9 +148,8 @@ $salesByMonthResult = getSalesByMonth($conn);
                     </div>
                 </div>
             </div>
-            <!-- Top-Selling Products -->
             <div class="col-md-4">
-                <div class="card   text-white" style="height: 100%; background-color: #565656;">
+                <div class="card text-white" style="height: 100%; background-color: #565656;">
                     <div class="card-body">
                         <h5 class="card-title">Top-Selling Products</h5>
                         <ul class="card-text">
@@ -170,9 +164,6 @@ $salesByMonthResult = getSalesByMonth($conn);
                 </div>
             </div>
         </div>
-
-       
-      
     </section>
 
     <script>
@@ -185,7 +176,6 @@ $salesByMonthResult = getSalesByMonth($conn);
                     data: [<?php echo round($salesPercentage); ?>, <?php echo 100 - round($salesPercentage); ?>],
                     backgroundColor: ['#4caf50', '#c0c0c0'],
                     borderWidth: 0,
-                    borderRadius: 10
                 }]
             },
             options: {
@@ -200,6 +190,8 @@ $salesByMonthResult = getSalesByMonth($conn);
         const salesData = {
             labels: [
                 <?php
+                // Reset the pointer to fetch month data
+                $salesByMonthResult->data_seek(0);
                 while ($row = $salesByMonthResult->fetch_assoc()) {
                     echo "'" . $row['month'] . "', ";
                 }
@@ -209,7 +201,7 @@ $salesByMonthResult = getSalesByMonth($conn);
                 label: 'Monthly Sales',
                 data: [
                     <?php
-                    $salesByMonthResult->data_seek(0);
+                    $salesByMonthResult->data_seek(0); // Reset pointer to fetch data
                     while ($row = $salesByMonthResult->fetch_assoc()) {
                         echo $row['total_sales'] . ", ";
                     }

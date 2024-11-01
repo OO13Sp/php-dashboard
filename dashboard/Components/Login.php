@@ -1,40 +1,25 @@
 <?php
 include 'db.php'; // Include the database connection
+include 'User.php'; // Include the User class
+
+// Create a User object
+$user = new User($conn);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = $_POST['name'];
     $password = $_POST['password'];
 
-    // Check if the username exists
-    $checkUserQuery = "SELECT * FROM usersmain WHERE name = ?";
-    $stmtCheck = $conn->prepare($checkUserQuery);
-    $stmtCheck->bind_param("s", $name);
-    $stmtCheck->execute();
-    $result = $stmtCheck->get_result();
+    // Call the login method from the User class
+    $loginResult = $user->login($name, $password);
 
-    if ($result->num_rows > 0) {
-        // Username exists, fetch user data
-        $user = $result->fetch_assoc();
-
-        // Verify the password
-        if (password_verify($password, $user['password'])) {
-            // Password is correct, redirect to dashboard
-            header("Location: /phpcrash/dashboard/dashboard.php");
-            exit(); // Ensure script halts after redirection
-        } else {
-            // Password is incorrect
-            $error = "Password is incorrect!";
-        }
+    if ($loginResult === true) {
+        // Login successful, redirect to dashboard
+        header("Location: /phpcrash/dashboard/dashboard.php");
+        exit();
     } else {
-        // Username is incorrect
-        $error = "Username is incorrect!";
+        // Show error message
+        $error = $loginResult;
     }
-
-    // Close the statement
-    $stmtCheck->close();
-
-    // Close the database connection
-    $conn->close();
 }
 ?>
 

@@ -1,49 +1,26 @@
 <?php
 include 'db.php'; // Include the database connection
+include 'User.php'; // Include the User class
+
+// Create a User object
+$user = new User($conn);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
-    $name = $_POST['name']; // Changed to 'name' to match the table column
+    $name = $_POST['name'];
     $password = $_POST['password'];
 
-    // Validate form fields
-    if (empty($email) || empty($name) || empty($password)) {
-        $error = "All fields are required!";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Invalid email format!";
+    // Call the signup method from the User class
+    $signupResult = $user->signup($email, $name, $password);
+
+    if ($signupResult === "User registered successfully!") {
+        // Signup successful, redirect to login page
+        header("Location: login.php");
+        exit();
     } else {
-        // Check if the email or username already exists
-        $checkUserQuery = "SELECT * FROM usersmain WHERE email = ? OR name = ?";
-        $stmtCheck = $conn->prepare($checkUserQuery);
-        $stmtCheck->bind_param("ss", $email, $name);
-        $stmtCheck->execute();
-        $result = $stmtCheck->get_result();
-
-        if ($result->num_rows > 0) {
-            $error = "User with this email or username already exists!";
-        } else {
-            // Hash the password before inserting into the database
-            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-            $sql = "INSERT INTO usersmain (email, name, password) VALUES (?, ?, ?)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sss", $email, $name, $hashedPassword); // Use hashed password
-
-            if ($stmt->execute()) {
-                $success = "User registered successfully!";
-            } else {
-                $error = "Error: " . $stmt->error;
-            }
-
-            // Close the statement after execution
-            $stmt->close();
-        }
-
-        // Close the check statement
-        $stmtCheck->close();
+        // Show error message
+        $error = $signupResult;
     }
-
-    // Close the database connection
-    $conn->close();
 }
 ?>
 
@@ -69,12 +46,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="card p-4 bg-light text-dark col-md-4 shadow">
             <h2 class="text-center mb-4">Sign Up</h2>
 
-            <!-- Display success or error messages -->
-            <?php if (isset($success)): ?>
-                <div class="alert alert-success" role="alert">
-                    <?php echo $success; ?>
-                </div>
-            <?php elseif (isset($error)): ?>
+            <!-- Display error message if any -->
+            <?php if (isset($error)): ?>
                 <div class="alert alert-danger" role="alert">
                     <?php echo $error; ?>
                 </div>
@@ -95,13 +68,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="password" name="password" id="password" class="form-control" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Sign Up</button>
-                <p class="text-center mt-3">Already have an account? <a href="login.php">Login</a></p>
-            </form>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-</html>
+                <p class="text-center mt-3">Already have an account? <a href="login

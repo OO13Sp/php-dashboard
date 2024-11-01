@@ -1,27 +1,35 @@
 <?php
-// Fetch total orders
-function getTotalOrders($conn) {
-    $totalOrdersQuery = "SELECT COUNT(order_id) AS total_orders FROM Orders";
-    $totalOrdersResult = $conn->query($totalOrdersQuery);
-    return $totalOrdersResult->fetch_assoc();
-}
+// OrderQueries.php
+require_once __DIR__ . '/../dbclass.php';
 
-// Fetch recent orders (last 7 days)
-function getRecentOrders($conn) {
-    $recentOrdersQuery = "SELECT COUNT(order_id) AS recent_orders FROM Orders WHERE order_date > DATE_SUB(NOW(), INTERVAL 7 DAY)";
-    $recentOrdersResult = $conn->query($recentOrdersQuery);
-    return $recentOrdersResult->fetch_assoc();
-}
+class OrderQueries extends DBclass {
 
-// Fetch top-selling products
-function getTopSellingProducts($conn) {
-    $topSellingProductsQuery = "
-        SELECT P.name, SUM(OI.quantity) AS total_sold 
-        FROM Order_Items OI
-        JOIN Products P ON OI.product_id = P.product_id
-        GROUP BY OI.product_id
-        ORDER BY total_sold DESC LIMIT 5";
-    $topSellingProductsResult = $conn->query($topSellingProductsQuery);
-    return $topSellingProductsResult;
+    public function getTotalOrders() {
+        $query = "SELECT COUNT(order_id) AS total_orders FROM Orders";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function getRecentOrders() {
+        $query = "SELECT COUNT(order_id) AS recent_orders FROM Orders WHERE order_date > DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function getTopSellingProducts() {
+        $query = "
+            SELECT P.name, SUM(OI.quantity) AS total_sold 
+            FROM Order_Items OI
+            JOIN Products P ON OI.product_id = P.product_id
+            GROUP BY OI.product_id
+            ORDER BY total_sold DESC LIMIT 5";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
 }
 ?>

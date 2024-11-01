@@ -1,15 +1,23 @@
 <?php
-// Fetch total users
-function getTotalUsers($conn) {
-    $totalUsersQuery = "SELECT COUNT(user_id) AS total_users FROM usersmain";
-    $totalUsersResult = $conn->query($totalUsersQuery);
-    return $totalUsersResult->fetch_assoc();
-}
+// UserQueries.php
+require_once __DIR__ . '/../dbclass.php';
 
-// Fetch new users in the last month
-function getNewUsers($conn) {
-    $newUsersQuery = "SELECT COUNT(user_id) AS new_users FROM usersmain WHERE signup_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)";
-    $newUsersResult = $conn->query($newUsersQuery);
-    return $newUsersResult->fetch_assoc();
+class UserQueries extends DBclass {
+
+    public function getTotalUsers() {
+        $query = "SELECT COUNT(user_id) AS total_users FROM usersmain";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
+
+    public function getNewUsers() {
+        $query = "SELECT COUNT(user_id) AS new_users FROM usersmain WHERE signup_date > DATE_SUB(NOW(), INTERVAL 1 MONTH)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
+    }
 }
 ?>
